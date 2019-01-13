@@ -9,4 +9,11 @@ All my shell scripts in one place
 Note: This script requires root privileges to run .
 
 
+3)resizeWindow.py : Dynamically resizes window based on currently executed command. Some comands such as 'ls -la' will require some scrolling so the terminal will resize accordingly.
+
+Place this script in /home/$USER/ directory and then on modify .bashrc file as mentioned in resizeWindow.py
+
+
+
+
 
