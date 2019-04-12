@@ -15,12 +15,11 @@ class Stock(models.Model):
     stock_name = models.CharField(max_length=20, blank=False, null=False)
 
 
-    # Get from iex
-    #name_of_company = Stock(stock_name).company()['companyName']
+    # Get from iex. WIll retrieve in save() function    
     company_name = models.CharField(max_length=100,blank = True)
     
     # Company information
-    stock_data = models.TextField(blank=True,null=False)
+    table_data = models.TextField(blank=True,null=False)
 
     #Company Description
     description = models.TextField(blank= True, null= True)   
@@ -32,8 +31,7 @@ class Stock(models.Model):
     is_downloaded = models.BooleanField(default=False)
 
 
-    def save(self, *args, **kwargs):
-       
+    def save(self, *args, **kwargs):       
         self.company_name = Stock_iex(self.stock_name).company()['companyName']        
         super().save(*args, **kwargs)  # Call the "real" save() method.
 

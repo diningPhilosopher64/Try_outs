@@ -46,11 +46,9 @@ global current_stock
 class ChartData(APIView):
     authentication_classes = []
     permission_classes = []
+    
 
-    def get(self, request, format=None):    
-
-        # Get data from csv to chart them. 
-        stock = Stock.objects.get(stock_name=current_stock)  
+    def get_chart_data(self,stock):
         stock_file_name = stock.stock_name + ".csv"       
 
         strFormat="%Y-%m-%d"
@@ -65,24 +63,11 @@ class ChartData(APIView):
         Data = list(df['Close'])
         labels = list(df['Date'])
 
+        return Data,labels
 
 
-        self.table = None
-        self.description = None
-        if stock.is_downloaded == True:
-            self.table = stock.stock_data
-            self.description = stock.description
-            print(self.description)
-
-        else: 
-
-            #Get stock info
-            # company_name = Stock.objects.get(stock_name=current_stock).company_name            
-            stock_obj = Stock_iex(current_stock)
-            company_name = stock_obj.company()['companyName']
-            print("\n\n\n\n Company Name is ", company_name,"\n\n\n\n")
-
-            url = "https://en.wikipedia.org/wiki/"+company_name
+    def get_description(self,stock):
+            url = "https://en.wikipedia.org/wiki/"+stock.company_name
             page = requests.get(url)
             soup = BeautifulSoup(page.text, 'html.parser')
             self.table = soup.find_all("table", class_="infobox vcard")[0]
@@ -100,15 +85,41 @@ class ChartData(APIView):
 
             response = session.get(url=URL, params=PARAMS)
             DATA = response.json()
-            self.description = DATA[2][0:2]
+            return DATA[2][0:2]
+        
+    def get_table_data(self,stock):
+        url = "https://en.wikipedia.org/wiki/"+stock.company_name
+        page = requests.get(url)
+        soup = BeautifulSoup(page.text, 'html.parser')
+        table = soup.find_all("table", class_="infobox vcard")[0]
+        return table
 
-        #Updating the stock Object 
-        #stock.update(is_downloaded = True)
-        stock.is_downloaded = True
-        stock.company_name
-        stock.stock_data =  str(self.table)
-        stock.description = self.description
-        stock.save()
+  
+  
+    def get(self, request, format=None):  
+
+        stock = Stock.objects.get(stock_name=current_stock)  
+
+        # Get data from csv to chart them. 
+        Data,labels = self.get_chart_data(stock)
+
+        self.table = None
+        self.description = None
+        
+        if stock.is_downloaded == True:
+            self.table = stock.table_data
+            self.description = stock.description
+
+        else:
+            self.table = self.get_table_data(stock)
+            self.description = self.get_description(stock)
+
+            #Updating the stock Object 
+            stock.is_downloaded = True
+            stock.company_name
+            stock.table_data =  str(self.table)
+            stock.description = self.description
+            stock.save()
 
        
 
@@ -187,3 +198,33 @@ class StockDetailView(DetailView):
 
     #     return context
 
+
+
+
+#Inside Else block :
+
+            #Get stock info
+            # company_name = Stock.objects.get(stock_name=current_stock).company_name            
+            # stock_obj = Stock_iex(current_stock)
+            # company_name = stock_obj.company()['companyName']
+            # print("\n\n\n\n Company Name is ", company_name,"\n\n\n\n")
+
+            # url = "https://en.wikipedia.org/wiki/"+company_name
+            # page = requests.get(url)
+            # soup = BeautifulSoup(page.text, 'html.parser')
+            # self.table = soup.find_all("table", class_="infobox vcard")[0]
+
+            # #Get Description:
+            # session = requests.Session()
+            # URL = "https://en.wikipedia.org/w/api.php"
+            # SEARCHPAGE = company_name
+            # PARAMS = {
+            #     'action': "opensearch",
+            #     'list': "search",
+            #     'search': SEARCHPAGE,
+            #     'format': "json"
+            # }
+
+            # response = session.get(url=URL, params=PARAMS)
+            # DATA = response.json()
+            #self.description = DATA[2][0:2]
