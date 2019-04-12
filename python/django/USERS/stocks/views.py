@@ -1,6 +1,6 @@
 from django.shortcuts import render,get_object_or_404
 from django.http import JsonResponse
-from .models import Stock
+
 import pandas as pd 
 import os
 from rest_framework.views import APIView
@@ -12,12 +12,12 @@ import urllib
 import re
 import requests
 from bs4 import BeautifulSoup
+import iex
 
+# Stock Class in iex matches with Stock table in Db
+from iex import Stock as Stock_iex
 
-import requests
-from bs4 import BeautifulSoup
-
-
+from .models import Stock
 
 from django.views.generic import (
 
@@ -32,6 +32,10 @@ from django.views.generic import (
 
 global current_stock
 
+
+
+
+
 # def get_data(request,*args,**kwargs):
 #     print("\n\n\n\n\n ", request.path(),"\n\n\n\n")
 #     data = {"sales":100,"customers":120}
@@ -42,8 +46,6 @@ global current_stock
 class ChartData(APIView):
     authentication_classes = []
     permission_classes = []
-
-
 
     def get(self, request, format=None):    
 
@@ -56,7 +58,6 @@ class ChartData(APIView):
         date_parser = lambda word : datetime.datetime.fromtimestamp(time.mktime(time.strptime(str(word),strFormat))).strftime("%d-%b-%Y")
         df['Date'] = df['Date'].map(date_parser)
 
-
         cols_to_delete = ['Open','High','Low','Adj Close','Volume']
         for col in cols_to_delete:
             del df[col]
@@ -65,45 +66,67 @@ class ChartData(APIView):
         labels = list(df['Date'])
 
 
-        #Get stock info
-        company_name = Stock.objects.get(stock_name=current_stock).company_name
-        url = "https://en.wikipedia.org/wiki/"+company_name
-        page = requests.get(url)
-        soup = BeautifulSoup(page.text, 'html.parser')
-        table = soup.find_all("table", class_="infobox vcard")[0]
 
-        #Get Description:
-        session = requests.Session()
+        self.table = None
+        self.description = None
+        if stock.is_downloaded == True:
+            self.table = stock.stock_data
+            self.description = stock.description
+            print(self.description)
 
-        URL = "https://en.wikipedia.org/w/api.php"
+        else: 
 
-        SEARCHPAGE = company_name
+            #Get stock info
+            # company_name = Stock.objects.get(stock_name=current_stock).company_name            
+            stock_obj = Stock_iex(current_stock)
+            company_name = stock_obj.company()['companyName']
+            print("\n\n\n\n Company Name is ", company_name,"\n\n\n\n")
 
-        PARAMS = {
-            'action': "opensearch",
-            'list': "search",
-            'search': SEARCHPAGE,
-            'format': "json"
-        }
+            url = "https://en.wikipedia.org/wiki/"+company_name
+            page = requests.get(url)
+            soup = BeautifulSoup(page.text, 'html.parser')
+            self.table = soup.find_all("table", class_="infobox vcard")[0]
 
-        response = session.get(url=URL, params=PARAMS)
-        DATA = response.json()
+            #Get Description:
+            session = requests.Session()
+            URL = "https://en.wikipedia.org/w/api.php"
+            SEARCHPAGE = company_name
+            PARAMS = {
+                'action': "opensearch",
+                'list': "search",
+                'search': SEARCHPAGE,
+                'format': "json"
+            }
 
-        description = DATA[2][0:2]
+            response = session.get(url=URL, params=PARAMS)
+            DATA = response.json()
+            self.description = DATA[2][0:2]
+
+        #Updating the stock Object 
+        #stock.update(is_downloaded = True)
+        stock.is_downloaded = True
+        stock.company_name
+        stock.stock_data =  str(self.table)
+        stock.description = self.description
+        stock.save()
+
        
 
         data = {
-        "table_data":str(table),
+        "table_data":str(self.table),
         "labels":labels,
         "Data":Data,
-        "Description":description,
+        "Description":self.description,
             }
+
+
+
         return Response(data)
   
 
 class StockListView(ListView):
     template_name = "stocks/stock_list.html"
-    queryset = Stock.objects.all()
+    queryset = Stock.objects.all()    
 
 
 class StockDetailView(DetailView):     
