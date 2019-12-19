@@ -2,12 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 
 
-last_two_years = ["https://summerofcode.withgoogle.com/archive/2019/organizations",
-                  "https://summerofcode.withgoogle.com/archive/2018/organizations"]
-
-last_three_years = ["https://summerofcode.withgoogle.com/archive/2019/organizations",
-                  "https://summerofcode.withgoogle.com/archive/2018/organizations",
-                   "https://summerofcode.withgoogle.com/archive/2017/organizations"]
 
 def get_previous_years_orgs(previous_years):
     previous_years_sets = []
@@ -38,17 +32,40 @@ def get_previous_years_orgs(previous_years):
             
 
 
-list1 = get_previous_years_orgs(["https://summerofcode.withgoogle.com/archive/2019/organizations"])
 
-list2 = get_previous_years_orgs(["https://summerofcode.withgoogle.com/archive/2018/organizations"])
 
-test1 = list(set(list1).intersection(set(list2)))
+def test():
+    list1 = get_previous_years_orgs(["https://summerofcode.withgoogle.com/archive/2019/organizations"])
+    list2 = get_previous_years_orgs(["https://summerofcode.withgoogle.com/archive/2018/organizations"])
+    test1 = list(set(list1).intersection(set(list2)))
+    test2 = get_previous_years_orgs(last_two_years)
+    test1.sort()
+    test2.sort()
+    if test1 == test2:
+        return True
+    else:
+        return False
 
-test2 = get_previous_years_orgs(last_two_years)
 
-test1.sort()
-test2.sort()
-if test1 == test2:
-    print("Yes")
-else:
-    print("No")
+if __name__ == '__main__':
+
+    last_two_years = ["https://summerofcode.withgoogle.com/archive/2019/organizations",
+                      "https://summerofcode.withgoogle.com/archive/2018/organizations"]
+
+    last_three_years = ["https://summerofcode.withgoogle.com/archive/2019/organizations",
+                      "https://summerofcode.withgoogle.com/archive/2018/organizations",
+                       "https://summerofcode.withgoogle.com/archive/2017/organizations"]
+
+
+    last_two_years_orgs = get_previous_years_orgs(last_two_years)
+
+    for org in last_two_years_orgs:
+        print(org)
+
+    
+
+
+
+
+
+
